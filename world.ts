@@ -1,7 +1,7 @@
 import { Being, DoodleBug, Ant } from "./beings";
 
-const initialAmountAnts: number = 40;
-const initialAmountBugs: number = 16;
+const initialAmountAnts: number = 300;
+const initialAmountBugs: number = 140;
 
 //World Class.
 class World {
@@ -64,6 +64,57 @@ class World {
         }
     }
 
+    //Everybody move
+    //[left, right, up, down]
+    moveEverybody(): void {
+        for (let i: number = 0; i < this.population.length; i++) {
+            let left: boolean = true;
+            let right: boolean = true;
+            let up: boolean = true;
+            let down: boolean = true;
+            const position: [number, number] = this.population[i].getPosition();
+            //check for edges.
+            if (position[0] == 0) {
+                left = false;
+            }
+            else if (this.cell[position[0] - 1][position[1]] != undefined) {
+                left = false;
+            }
+            if (position[0] == this.dimensions[0] - 1) {
+                right = false;
+            }
+            else if (this.cell[position[0] + 1][position[1]] != undefined) {
+                right = false;
+            }
+            if (position[1] == 0) {
+                up = false;
+            }
+            else if (this.cell[position[0]][position[1] - 1] != undefined) {
+                up = false;
+            }
+            if (position[1] == this.dimensions[1] - 1) {
+                down = false;
+            }
+            else if (this.cell[position[0]][position[1] + 1] != undefined) {
+                down = false;
+            }
+            //move
+            this.population[i].move([left, right, up, down]);
+            this.cell[position[0]][position[1]] = undefined;
+            const newPosition: [number, number] = this.population[i].getPosition();
+            if(this.population[i] instanceof Being) {
+                const thisBeing: Being = this.population[i];
+                this.cell[newPosition[0]][newPosition[1]] = thisBeing;
+            }
+        }
+    }
+
+    //Everybody interacts
+
+    //Everybody grow older
+
+    //Everybody gets hungry
+
     //Function to render the world.
     render(): void {
         console.clear();
@@ -72,7 +123,7 @@ class World {
             for (let w: number = 0; w < this.dimensions[0]; w++) {
                 const cell = this.cell[w][h];
                 if (!cell) {
-                    line += ".";
+                    line += " ";
                 }
                 else if (cell instanceof Ant) {
                     line += "\x1b[36mX\x1b[0m";
@@ -90,6 +141,27 @@ function randomInterval(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-const aWorld: World = new World([30, 30]);
-aWorld.render();
-aWorld.readPopulation();
+const aWorld: World = new World([200, 50]);
+
+for (let i: number = 0; i < 100; i++) {
+    aWorld.moveEverybody();
+    aWorld.render();
+    console.log(i);
+}
+
+
+let i: number = 0;
+const maxIterations: number = 10000;
+
+//Time based animation.
+const interval = setInterval(() => {
+    if (i >= maxIterations) {
+        clearInterval(interval);
+        return;
+    }
+    aWorld.moveEverybody();
+    aWorld.render();
+    console.log(i);
+    i++;
+}, 200);
+

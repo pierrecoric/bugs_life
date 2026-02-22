@@ -51,6 +51,37 @@ class Being {
         } else { return 0; }
     }
 
+    //[left, right, up, down]
+    move(availableDirections: [boolean, boolean, boolean, boolean]): void {
+        if (!availableDirections[0] && !availableDirections[1] && !availableDirections[2] && !availableDirections[3]) {
+            return;
+        }
+        let pickedDirection: boolean = false;
+        let direction: number = randomInterval(0, 3);
+        while (!pickedDirection) {
+            direction = randomInterval(0, 3);
+            if (availableDirections[direction]) {
+                pickedDirection = true;
+            }
+        }
+
+        switch (direction) {
+            case 0:
+                this.position[0]--;
+                if (this.position[0] < 0) { }
+                break;
+            case 1:
+                this.position[0]++;
+                break;
+            case 2:
+                this.position[1]--;
+                break;
+            case 3:
+                this.position[1]++;
+                break;
+        }
+    }
+
     sayHello(): void {
         console.log(`This is ${this.name} who is ${this.age} generations old in position ${this.position[0]}, ${this.position[1]}.`);
     }
@@ -85,6 +116,10 @@ class DoodleBug extends Being {
         super(position ?? [0, 0], age ?? 0, DoodleBug.DEFAULT_LIFE_EXPECTANCY, DoodleBug.DEFAULT_LIFE, name ?? "Magda");
         this.starve = starve;
     }
+}
+
+function randomInterval(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
 export { Being, Ant, DoodleBug };

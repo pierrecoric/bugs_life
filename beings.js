@@ -58,6 +58,35 @@ var Being = /** @class */ (function () {
             return 0;
         }
     };
+    //[left, right, up, down]
+    Being.prototype.move = function (availableDirections) {
+        if (!availableDirections[0] && !availableDirections[1] && !availableDirections[2] && !availableDirections[3]) {
+            return;
+        }
+        var pickedDirection = false;
+        var direction = randomInterval(0, 3);
+        while (!pickedDirection) {
+            direction = randomInterval(0, 3);
+            if (availableDirections[direction]) {
+                pickedDirection = true;
+            }
+        }
+        switch (direction) {
+            case 0:
+                this.position[0]--;
+                if (this.position[0] < 0) { }
+                break;
+            case 1:
+                this.position[0]++;
+                break;
+            case 2:
+                this.position[1]--;
+                break;
+            case 3:
+                this.position[1]++;
+                break;
+        }
+    };
     Being.prototype.sayHello = function () {
         console.log("This is ".concat(this.name, " who is ").concat(this.age, " generations old in position ").concat(this.position[0], ", ").concat(this.position[1], "."));
     };
@@ -89,3 +118,6 @@ var DoodleBug = /** @class */ (function (_super) {
     return DoodleBug;
 }(Being));
 exports.DoodleBug = DoodleBug;
+function randomInterval(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min);
+}
