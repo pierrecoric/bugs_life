@@ -102,7 +102,7 @@ class World {
             this.population[i].move([left, right, up, down]);
             this.cell[position[0]][position[1]] = undefined;
             const newPosition: [number, number] = this.population[i].getPosition();
-            if(this.population[i] instanceof Being) {
+            if (this.population[i] instanceof Being) {
                 const thisBeing: Being = this.population[i];
                 this.cell[newPosition[0]][newPosition[1]] = thisBeing;
             }
@@ -149,7 +149,6 @@ for (let i: number = 0; i < 100; i++) {
     console.log(i);
 }
 
-
 let i: number = 0;
 const maxIterations: number = 10000;
 
@@ -164,4 +163,3 @@ const interval = setInterval(() => {
     console.log(i);
     i++;
 }, 200);
-
