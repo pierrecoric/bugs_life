@@ -109,11 +109,153 @@ class World {
         }
     }
 
-    //Everybody interacts
+    //Doodlebugs eat ants.
 
-    //Everybody grow older
+    //Everybody gets hungry.
 
-    //Everybody gets hungry
+    //Everybody is making babies. Rule: if exactly two of the same beings are next to eachOther,
+    //they have one chance out of three to make a baby. The baby appears in one of the free spots around them.
+
+    /*
+    OXX
+    XXX
+    XXX
+    */
+
+    makingBabies(): void {
+        let newBorns: Being[] = [];
+        for (let i: number = 0; i < this.population.length; i++) {
+            const position: [number, number] = this.population[i].getPosition();
+            const x: number = position[0];
+            const y: number = position[1];
+
+            //Defining some booleans for the edge cases.
+            let neighbors: (Being | undefined)[] = [];
+            let isLeft: boolean = false;
+            let isRight: boolean = false;
+            let isUp: boolean = false;
+            let isDown: boolean = false;
+            if (x === 0) { isLeft = true; }
+            if (x === this.dimensions[0] - 1) { isRight = true; }
+            if (y === 0) { isUp = true; }
+            if (y === this.dimensions[1] - 1) { isDown = true; }
+
+            
+            if(isUp) {
+
+                /*
+                OX
+                XX
+                */
+                if(isLeft){
+
+                }
+
+                /*
+                XO
+                XX
+                */
+                else if(isRight) {
+
+                }
+
+                /*
+                XOX
+                XXX
+                */
+                else {
+
+                }
+            }
+            else if(isDown) {
+
+                /*
+                XX
+                0X
+                */
+                if(isLeft) {
+
+                }
+
+                /*
+                XX
+                XO
+                */
+                else if (isRight) {
+
+                }
+
+                /*
+                XXX
+                XOX
+                */
+                else {
+                    neighbors.push(this.cell[x - 1][y - 1]);
+                    neighbors.push(this.cell[x - 1][y]);
+                    neighbors.push(this.cell[x][y - 1]);
+                    neighbors.push(this.cell[x + 1][y - 1]);
+                    neighbors.push(this.cell[x + 1][y]);
+
+                }
+            }
+
+            /*
+            XX
+            OX
+            XX
+            */
+            else if (!isUp && ! isDown && isLeft) {
+                neighbors.push(this.cell[x][y - 1]);
+                neighbors.push(this.cell[x][y + 1]);
+                neighbors.push(this.cell[x + 1][y - 1]);
+                neighbors.push(this.cell[x + 1][y]);
+                neighbors.push(this.cell[x + 1][y + 1]);
+            }
+
+            /*
+            XX
+            XO
+            XX
+            */
+            else if (!isUp && ! isDown && isRight) {
+                neighbors.push(this.cell[x - 1][y - 1]);
+                neighbors.push(this.cell[x - 1][y]);
+                neighbors.push(this.cell[x - 1][y + 1]);
+                neighbors.push(this.cell[x][y - 1]);
+                neighbors.push(this.cell[x][y + 1]);
+            
+            }
+
+            /*
+            XXX
+            XOX
+            XXX
+            */
+            else {
+                neighbors.push(this.cell[x - 1][y - 1]);
+                neighbors.push(this.cell[x - 1][y]);
+                neighbors.push(this.cell[x - 1][y + 1]);
+                neighbors.push(this.cell[x][y - 1]);
+                neighbors.push(this.cell[x][y + 1]);
+                neighbors.push(this.cell[x + 1][y - 1]);
+                neighbors.push(this.cell[x + 1][y]);
+                neighbors.push(this.cell[x + 1][y + 1]);
+            }
+        }
+
+    }
+
+    //Everybody growing older.
+    growingOlder(): void {
+        //Iterating from the end of the population array.
+        for (let i: number = this.population.length - 1; i >= 0; i--) {
+            if (this.population[i].growOlder() === false) {
+                const position: [number, number] = this.population[i].getPosition();
+                this.cell[position[0]][position[1]] = undefined;
+                this.population.splice(i, 1);
+            }
+        }
+    }
 
     //Function to render the world.
     render(): void {
@@ -159,7 +301,8 @@ const interval = setInterval(() => {
         return;
     }
     aWorld.moveEverybody();
+    aWorld.growingOlder();
     aWorld.render();
     console.log(i);
     i++;
-}, 200);
+}, 100);

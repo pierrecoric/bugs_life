@@ -38,7 +38,7 @@ var Being = /** @class */ (function () {
         return ([this.position[0], this.position[1]]);
     };
     Being.prototype.die = function () {
-        return 1;
+        return false;
     };
     Being.prototype.growOlder = function () {
         this.age++;
@@ -46,7 +46,7 @@ var Being = /** @class */ (function () {
             return this.die();
         }
         else {
-            return 0;
+            return true;
         }
     };
     Being.prototype.getHit = function (hit) {
@@ -55,7 +55,7 @@ var Being = /** @class */ (function () {
             return this.die();
         }
         else {
-            return 0;
+            return true;
         }
     };
     //[left, right, up, down]
@@ -113,6 +113,17 @@ var DoodleBug = /** @class */ (function (_super) {
         _this.starve = starve;
         return _this;
     }
+    DoodleBug.prototype.starvation = function (hasEaten) {
+        if (!hasEaten) {
+            this.starve++;
+        }
+        if (this.starve === 5) {
+            return this.die();
+        }
+        else {
+            return true;
+        }
+    };
     DoodleBug.DEFAULT_LIFE = 20;
     DoodleBug.DEFAULT_LIFE_EXPECTANCY = 30;
     return DoodleBug;

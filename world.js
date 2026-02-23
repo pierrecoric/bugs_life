@@ -106,9 +106,20 @@ var World = /** @class */ (function () {
             }
         }
     };
-    //Everybody interacts
-    //Everybody grow older
-    //Everybody gets hungry
+    //Doodlebugs eat ants.
+    //Everybody gets hungry.
+    //Ants make Babies.
+    //Everybody growing older.
+    World.prototype.growingOlder = function () {
+        //Iterating from the end of the population array.
+        for (var i_5 = this.population.length - 1; i_5 >= 0; i_5--) {
+            if (this.population[i_5].growOlder() === false) {
+                var position = this.population[i_5].getPosition();
+                this.cell[position[0]][position[1]] = undefined;
+                this.population.splice(i_5, 1);
+            }
+        }
+    };
     //Function to render the world.
     World.prototype.render = function () {
         console.clear();
@@ -135,10 +146,10 @@ function randomInterval(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
 }
 var aWorld = new World([200, 50]);
-for (var i_5 = 0; i_5 < 100; i_5++) {
+for (var i_6 = 0; i_6 < 100; i_6++) {
     aWorld.moveEverybody();
     aWorld.render();
-    console.log(i_5);
+    console.log(i_6);
 }
 var i = 0;
 var maxIterations = 10000;
@@ -149,7 +160,8 @@ var interval = setInterval(function () {
         return;
     }
     aWorld.moveEverybody();
+    aWorld.growingOlder();
     aWorld.render();
     console.log(i);
     i++;
-}, 200);
+}, 100);

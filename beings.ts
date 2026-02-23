@@ -33,22 +33,22 @@ class Being {
         return ([this.position[0], this.position[1]]);
     }
 
-    die(): number {
-        return 1;
+    die(): boolean {
+        return false;
     }
 
-    growOlder(): number {
+    growOlder(): boolean {
         this.age++;
         if (this.age > this.lifeExpectancy) {
             return this.die();
-        } else { return 0; }
+        } else { return true; }
     }
 
-    getHit(hit: number): number {
+    getHit(hit: number): boolean {
         this.life -= hit;
         if (this.life <= 0) {
             return this.die();
-        } else { return 0; }
+        } else { return true; }
     }
 
     //[left, right, up, down]
@@ -116,6 +116,16 @@ class DoodleBug extends Being {
         super(position ?? [0, 0], age ?? 0, DoodleBug.DEFAULT_LIFE_EXPECTANCY, DoodleBug.DEFAULT_LIFE, name ?? "Magda");
         this.starve = starve;
     }
+
+    starvation(hasEaten: boolean): boolean {
+        if(!hasEaten) {
+            this.starve++;
+        }
+        if (this.starve === 5) {
+            return this.die()
+        } else { return true; }
+    }
+
 }
 
 function randomInterval(min: number, max: number): number {
