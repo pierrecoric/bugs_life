@@ -1,5 +1,6 @@
 //Base class: Being.
-class Being {
+abstract class Being {
+    private species: string;
     private position: [number, number];
     private age: number;
     private lifeExpectancy: number;
@@ -8,15 +9,17 @@ class Being {
 
     //constructor signatures:
     constructor();
-    constructor(position: [number, number], age: number, lifeExpectancy: number, life: number, name: string);
+    constructor(species: string, position: [number, number], age: number, lifeExpectancy: number, life: number, name: string);
 
     constructor(
+        species: string = "",
         position: [number, number] = [0, 0],
         age: number = 0,
         lifeExpectancy: number = 0,
         life: number = 0,
         name: string = "Boris"
     ) {
+        this.species = species;
         this.position = position;
         this.age = age;
         this.lifeExpectancy = lifeExpectancy;
@@ -24,13 +27,29 @@ class Being {
         this.name = name;
     }
 
-    setPosition(x: number, y: number): void {
-        this.position[0] = x;
-        this.position[1] = y;
+    setPosition(coordinates: [number, number]): void {
+        this.position[0] = coordinates[0];
+        this.position[1] = coordinates[1];
     }
 
     getPosition(): [number, number] {
         return ([this.position[0], this.position[1]]);
+    }
+
+    getSpecies(): string {
+        return this.species;
+    }
+
+    getAge(): number {
+        return this.age;
+    }
+
+    getLife(): number {
+        return this.life;
+    }
+
+    getLifeExpectancy(): number {
+        return this.lifeExpectancy;
     }
 
     die(): boolean {
@@ -52,34 +71,11 @@ class Being {
     }
 
     //[left, right, up, down]
-    move(availableDirections: [boolean, boolean, boolean, boolean]): void {
-        if (!availableDirections[0] && !availableDirections[1] && !availableDirections[2] && !availableDirections[3]) {
+    move(freeCells: [number, number][]): void {
+        if (freeCells.length === 0) {
             return;
         }
-        let pickedDirection: boolean = false;
-        let direction: number = randomInterval(0, 3);
-        while (!pickedDirection) {
-            direction = randomInterval(0, 3);
-            if (availableDirections[direction]) {
-                pickedDirection = true;
-            }
-        }
-
-        switch (direction) {
-            case 0:
-                this.position[0]--;
-                if (this.position[0] < 0) { }
-                break;
-            case 1:
-                this.position[0]++;
-                break;
-            case 2:
-                this.position[1]--;
-                break;
-            case 3:
-                this.position[1]++;
-                break;
-        }
+        this.setPosition(freeCells[randomInterval(0, freeCells.length - 1)]);
     }
 
     sayHello(): void {
@@ -97,7 +93,8 @@ class Ant extends Being {
         age?: number,
         name?: string
     ) {
-        super(position ?? [0, 0], age ?? 0, Ant.DEFAULT_LIFE_EXPECTANCY, Ant.DEFAULT_LIFE, name ?? "Charlie");
+        //How to add the string species?
+        super("ANT", position ?? [0, 0], age ?? 0, Ant.DEFAULT_LIFE_EXPECTANCY, Ant.DEFAULT_LIFE, name ?? "Charlie");
     }
 }
 
@@ -113,12 +110,12 @@ class DoodleBug extends Being {
         name?: string,
         starve: number = 0
     ) {
-        super(position ?? [0, 0], age ?? 0, DoodleBug.DEFAULT_LIFE_EXPECTANCY, DoodleBug.DEFAULT_LIFE, name ?? "Magda");
+        super("DOODLEBUG", position ?? [0, 0], age ?? 0, DoodleBug.DEFAULT_LIFE_EXPECTANCY, DoodleBug.DEFAULT_LIFE, name ?? "Magda");
         this.starve = starve;
     }
 
     starvation(hasEaten: boolean): boolean {
-        if(!hasEaten) {
+        if (!hasEaten) {
             this.starve++;
         }
         if (this.starve === 5) {

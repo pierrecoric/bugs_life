@@ -1,8 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var beings_1 = require("./beings");
-var initialAmountAnts = 300;
-var initialAmountBugs = 140;
+var initialAmountAnts = 200;
+var initialAmountBugs = 80;
+var antReproductionLikelihood = 10 - 9;
+var doodleBugReproductionLikelihood = 10 - 8;
+var antChars = [".", "o", "O", "0", "8"];
+var doodleBugChar = ["-", "x", "X", "F", "E", "#"];
 //World Class.
 var World = /** @class */ (function () {
     function World(dimensions) {
@@ -25,6 +29,7 @@ var World = /** @class */ (function () {
         }
         else {
             this.cell[newPosition[0]][newPosition[1]] = guy;
+            this.population.push(guy);
         }
     };
     //Function to populate the world.
@@ -35,7 +40,6 @@ var World = /** @class */ (function () {
             var newAnt = new beings_1.Ant([posx, posy], 0, "Bogusława");
             if (!this.cell[posx][posy]) {
                 this.placeBeing([posx, posy], newAnt);
-                this.population.push(newAnt);
             }
             else {
                 i_1--;
@@ -47,7 +51,6 @@ var World = /** @class */ (function () {
             var newDoodleBug = new beings_1.DoodleBug([posx, posy], 0, "Zbigniew");
             if (!this.cell[posx][posy]) {
                 this.placeBeing([posx, posy], newDoodleBug);
-                this.population.push(newDoodleBug);
             }
             else {
                 i_2--;
@@ -57,58 +60,115 @@ var World = /** @class */ (function () {
     //Function to read the population
     World.prototype.readPopulation = function () {
         console.log(this.population.length);
-        for (var i_3 = 0; i_3 < this.population.length; i_3++) {
-            console.log(this.population[i_3]);
-            console.log(this.population[i_3].getPosition());
+    };
+    World.prototype.getNeighbors = function (x, y) {
+        var neighbors = [];
+        for (var dx = -1; dx <= 1; dx++) {
+            for (var dy = -1; dy <= 1; dy++) {
+                //checking the cell itself.
+                if (dx === 0 && dy === 0)
+                    continue;
+                var nx = x + dx;
+                var ny = y + dy;
+                if (nx >= 0 &&
+                    nx < this.dimensions[0] &&
+                    ny >= 0 &&
+                    ny < this.dimensions[1]) {
+                    if (this.cell[nx][ny] instanceof beings_1.Being)
+                        neighbors.push(this.cell[nx][ny]);
+                }
+            }
         }
+        return neighbors;
+    };
+    World.prototype.getFreeCells = function (x, y) {
+        var freeCells = [];
+        for (var dx = -1; dx <= 1; dx++) {
+            for (var dy = -1; dy <= 1; dy++) {
+                if (dx === 0 && dy === 0)
+                    continue;
+                var nx = x + dx;
+                var ny = y + dy;
+                if (nx >= 0 &&
+                    nx < this.dimensions[0] &&
+                    ny >= 0 &&
+                    ny < this.dimensions[1]) {
+                    if (this.cell[nx][ny] === undefined) {
+                        var coordinates = [nx, ny];
+                        freeCells.push(coordinates);
+                    }
+                }
+            }
+        }
+        return freeCells;
     };
     //Everybody move
     //[left, right, up, down]
     World.prototype.moveEverybody = function () {
-        for (var i_4 = 0; i_4 < this.population.length; i_4++) {
-            var left = true;
-            var right = true;
-            var up = true;
-            var down = true;
-            var position = this.population[i_4].getPosition();
-            //check for edges.
-            if (position[0] == 0) {
-                left = false;
-            }
-            else if (this.cell[position[0] - 1][position[1]] != undefined) {
-                left = false;
-            }
-            if (position[0] == this.dimensions[0] - 1) {
-                right = false;
-            }
-            else if (this.cell[position[0] + 1][position[1]] != undefined) {
-                right = false;
-            }
-            if (position[1] == 0) {
-                up = false;
-            }
-            else if (this.cell[position[0]][position[1] - 1] != undefined) {
-                up = false;
-            }
-            if (position[1] == this.dimensions[1] - 1) {
-                down = false;
-            }
-            else if (this.cell[position[0]][position[1] + 1] != undefined) {
-                down = false;
-            }
+        for (var i_3 = 0; i_3 < this.population.length; i_3++) {
+            var _a = this.population[i_3].getPosition(), x = _a[0], y = _a[1];
+            var freeCells = this.getFreeCells(x, y);
             //move
-            this.population[i_4].move([left, right, up, down]);
-            this.cell[position[0]][position[1]] = undefined;
-            var newPosition = this.population[i_4].getPosition();
-            if (this.population[i_4] instanceof beings_1.Being) {
-                var thisBeing = this.population[i_4];
+            this.population[i_3].move(freeCells);
+            this.cell[x][y] = undefined;
+            var newPosition = this.population[i_3].getPosition();
+            if (this.population[i_3] instanceof beings_1.Being) {
+                var thisBeing = this.population[i_3];
                 this.cell[newPosition[0]][newPosition[1]] = thisBeing;
             }
         }
     };
     //Doodlebugs eat ants.
     //Everybody gets hungry.
-    //Ants make Babies.
+    //Everybody is making babies. Rule: if exactly two of the same beings are next to eachOther,
+    //they have one chance out of three to make a baby. The baby appears in one of the free spots around them.
+    World.prototype.makingBabies = function () {
+        //Iterate over the population.
+        for (var i_4 = 0; i_4 < this.population.length; i_4++) {
+            //Get the position of the current being.
+            var _a = this.population[i_4].getPosition(), x = _a[0], y = _a[1];
+            var neighbors = this.getNeighbors(x, y);
+            //If the current being only has a neighbor
+            if (neighbors.length === 1) {
+                //Get the species and ages of both beings.
+                var beingA = this.population[i_4];
+                var beingB = neighbors[0];
+                //If both beings are of the same species and old enough to have babies and not too old to have babies.
+                if (beingA.getSpecies() === beingB.getSpecies() &&
+                    beingA.getAge() > beingA.getLifeExpectancy() / 8 &&
+                    beingB.getAge() > beingB.getLifeExpectancy() / 8 &&
+                    beingA.getAge() < beingA.getLifeExpectancy() - beingA.getLifeExpectancy() / 5 &&
+                    beingB.getAge() < beingB.getLifeExpectancy() - beingB.getLifeExpectancy() / 5) {
+                    //Define wheter babies are being made
+                    var letsMakeBabies = false;
+                    if (beingA.getSpecies() === "ANT") {
+                        var dice = randomInterval(0, antReproductionLikelihood);
+                        if (dice === 0) {
+                            letsMakeBabies = true;
+                        }
+                    }
+                    else {
+                        var dice = randomInterval(0, doodleBugReproductionLikelihood);
+                        if (dice === 0) {
+                            letsMakeBabies = true;
+                        }
+                    }
+                    if (letsMakeBabies) {
+                        var freeCells = this.getFreeCells(x, y);
+                        var babyCell = freeCells[randomInterval(0, freeCells.length - 1)];
+                        if (beingA.getSpecies() === "ANT") {
+                            var newAnt = new beings_1.Ant(babyCell, 0, "Jamnicek");
+                            this.placeBeing(newAnt.getPosition(), newAnt);
+                        }
+                        else {
+                            var newDoodleBug = new beings_1.DoodleBug(babyCell, 0, "Jamnicek");
+                            this.placeBeing(newDoodleBug.getPosition(), newDoodleBug);
+                        }
+                    }
+                }
+            }
+        }
+    };
     //Everybody growing older.
     World.prototype.growingOlder = function () {
         //Iterating from the end of the population array.
@@ -123,18 +183,28 @@ var World = /** @class */ (function () {
     //Function to render the world.
     World.prototype.render = function () {
         console.clear();
+        //Iterate over the cells array.
         for (var h = 0; h < this.dimensions[1]; h++) {
             var line = "";
             for (var w = 0; w < this.dimensions[0]; w++) {
+                //Check the current cell.
                 var cell = this.cell[w][h];
+                var age = 0;
+                if (cell instanceof beings_1.Being) {
+                    age = cell.getAge();
+                }
                 if (!cell) {
                     line += " ";
                 }
                 else if (cell instanceof beings_1.Ant) {
-                    line += "\x1b[36mX\x1b[0m";
+                    var ageIndex = Math.floor((age / 20) * (antChars.length - 1));
+                    var char = antChars[ageIndex];
+                    line += colorCharacter(char, 255 - 9 * age, 255 - 9 * age, 0);
                 }
                 else if (cell instanceof beings_1.DoodleBug) {
-                    line += "\x1b[31m#\x1b[0m";
+                    var ageIndex = Math.floor((age / 30) * (doodleBugChar.length - 1));
+                    var char = doodleBugChar[ageIndex];
+                    line += colorCharacter(char, 0, 255 - 7 * age, 255 - 7 * age);
                 }
             }
             console.log(line);
@@ -144,6 +214,9 @@ var World = /** @class */ (function () {
 }());
 function randomInterval(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
+}
+function colorCharacter(char, red, green, blue) {
+    return "\u001B[38;2;".concat(red, ";").concat(green, ";").concat(blue, "m").concat(char, "\u001B[0m");
 }
 var aWorld = new World([200, 50]);
 for (var i_6 = 0; i_6 < 100; i_6++) {
@@ -161,7 +234,8 @@ var interval = setInterval(function () {
     }
     aWorld.moveEverybody();
     aWorld.growingOlder();
+    aWorld.makingBabies();
     aWorld.render();
-    console.log(i);
+    aWorld.readPopulation();
     i++;
 }, 100);

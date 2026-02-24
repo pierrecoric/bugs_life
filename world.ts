@@ -1,7 +1,12 @@
 import { Being, DoodleBug, Ant } from "./beings";
 
-const initialAmountAnts: number = 300;
-const initialAmountBugs: number = 140;
+const initialAmountAnts: number = 200;
+const initialAmountBugs: number = 80;
+const antReproductionLikelihood: number = 10 - 9;
+const doodleBugReproductionLikelihood: number = 10 - 8;
+
+const antChars: string[] = [".", "o", "O", "0", "8"];
+const doodleBugChar: string[] = ["-", "x", "X", "F", "E", "#"];
 
 //World Class.
 class World {
@@ -30,6 +35,7 @@ class World {
         }
         else {
             this.cell[newPosition[0]][newPosition[1]] = guy;
+            this.population.push(guy);
         }
     }
 
@@ -41,7 +47,6 @@ class World {
             const newAnt: Ant = new Ant([posx, posy], 0, "Bogusława");
             if (!this.cell[posx][posy]) {
                 this.placeBeing([posx, posy], newAnt);
-                this.population.push(newAnt);
             } else { i--; }
         }
         for (let i: number = 0; i < initialAmountBugs; i++) {
@@ -50,7 +55,6 @@ class World {
             const newDoodleBug: DoodleBug = new DoodleBug([posx, posy], 0, "Zbigniew");
             if (!this.cell[posx][posy]) {
                 this.placeBeing([posx, posy], newDoodleBug);
-                this.population.push(newDoodleBug);
             } else { i--; }
         }
     }
@@ -58,49 +62,63 @@ class World {
     //Function to read the population
     readPopulation(): void {
         console.log(this.population.length);
-        for (let i: number = 0; i < this.population.length; i++) {
-            console.log(this.population[i]);
-            console.log(this.population[i].getPosition());
+    }
+
+
+    private getNeighbors(x: number, y: number): Being[] {
+        let neighbors: Being[] = [];
+        for (let dx: number = -1; dx <= 1; dx++) {
+            for (let dy: number = -1; dy <= 1; dy++) {
+                //checking the cell itself.
+                if (dx === 0 && dy === 0) continue;
+                const nx: number = x + dx;
+                const ny: number = y + dy;
+                if (
+                    nx >= 0 &&
+                    nx < this.dimensions[0] &&
+                    ny >= 0 &&
+                    ny < this.dimensions[1]
+                ) {
+                    if (this.cell[nx][ny] instanceof Being)
+                        neighbors.push(this.cell[nx][ny]);
+                }
+            }
         }
+        return neighbors;
+    }
+
+    private getFreeCells(x: number, y: number): [number, number][] {
+        let freeCells: [number, number][] = [];
+        for (let dx: number = -1; dx <= 1; dx++) {
+            for (let dy: number = -1; dy <= 1; dy++) {
+                if (dx === 0 && dy === 0) continue;
+                const nx: number = x + dx;
+                const ny: number = y + dy;
+                if (
+                    nx >= 0 &&
+                    nx < this.dimensions[0] &&
+                    ny >= 0 &&
+                    ny < this.dimensions[1]
+                ) {
+                    if (this.cell[nx][ny] === undefined) {
+                        const coordinates: [number, number] = [nx, ny];
+                        freeCells.push(coordinates);
+                    }
+                }
+            }
+        }
+        return freeCells;
     }
 
     //Everybody move
     //[left, right, up, down]
     moveEverybody(): void {
         for (let i: number = 0; i < this.population.length; i++) {
-            let left: boolean = true;
-            let right: boolean = true;
-            let up: boolean = true;
-            let down: boolean = true;
-            const position: [number, number] = this.population[i].getPosition();
-            //check for edges.
-            if (position[0] == 0) {
-                left = false;
-            }
-            else if (this.cell[position[0] - 1][position[1]] != undefined) {
-                left = false;
-            }
-            if (position[0] == this.dimensions[0] - 1) {
-                right = false;
-            }
-            else if (this.cell[position[0] + 1][position[1]] != undefined) {
-                right = false;
-            }
-            if (position[1] == 0) {
-                up = false;
-            }
-            else if (this.cell[position[0]][position[1] - 1] != undefined) {
-                up = false;
-            }
-            if (position[1] == this.dimensions[1] - 1) {
-                down = false;
-            }
-            else if (this.cell[position[0]][position[1] + 1] != undefined) {
-                down = false;
-            }
+            const [x, y]: [number, number] = this.population[i].getPosition();
+            const freeCells: [number, number][] = this.getFreeCells(x, y);
             //move
-            this.population[i].move([left, right, up, down]);
-            this.cell[position[0]][position[1]] = undefined;
+            this.population[i].move(freeCells);
+            this.cell[x][y] = undefined;
             const newPosition: [number, number] = this.population[i].getPosition();
             if (this.population[i] instanceof Being) {
                 const thisBeing: Being = this.population[i];
@@ -116,133 +134,58 @@ class World {
     //Everybody is making babies. Rule: if exactly two of the same beings are next to eachOther,
     //they have one chance out of three to make a baby. The baby appears in one of the free spots around them.
 
-    /*
-    OXX
-    XXX
-    XXX
-    */
-
     makingBabies(): void {
-        let newBorns: Being[] = [];
+        //Iterate over the population.
         for (let i: number = 0; i < this.population.length; i++) {
-            const position: [number, number] = this.population[i].getPosition();
-            const x: number = position[0];
-            const y: number = position[1];
+            //Get the position of the current being.
+            const [x, y]: [number, number] = this.population[i].getPosition();
+            const neighbors: Being[] = this.getNeighbors(x, y);
 
-            //Defining some booleans for the edge cases.
-            let neighbors: (Being | undefined)[] = [];
-            let isLeft: boolean = false;
-            let isRight: boolean = false;
-            let isUp: boolean = false;
-            let isDown: boolean = false;
-            if (x === 0) { isLeft = true; }
-            if (x === this.dimensions[0] - 1) { isRight = true; }
-            if (y === 0) { isUp = true; }
-            if (y === this.dimensions[1] - 1) { isDown = true; }
+            //If the current being only has a neighbor
+            if (neighbors.length === 1) {
 
-            
-            if(isUp) {
+                //Get the species and ages of both beings.
+                const beingA: Being = this.population[i];
+                const beingB: Being = neighbors[0];
 
-                /*
-                OX
-                XX
-                */
-                if(isLeft){
+                //If both beings are of the same species and old enough to have babies and not too old to have babies.
+                if (
+                    beingA.getSpecies() === beingB.getSpecies() &&
+                    beingA.getAge() > beingA.getLifeExpectancy() / 8 &&
+                    beingB.getAge() > beingB.getLifeExpectancy() / 8 &&
+                    beingA.getAge() < beingA.getLifeExpectancy() - beingA.getLifeExpectancy() / 5 &&
+                    beingB.getAge() < beingB.getLifeExpectancy() - beingB.getLifeExpectancy() / 5
+                ) {
+                    //Define wheter babies are being made
+                    let letsMakeBabies: boolean = false;
+                    if (beingA.getSpecies() === "ANT") {
+                        const dice: number = randomInterval(0, antReproductionLikelihood);
+                        if (dice === 0) {
+                            letsMakeBabies = true;
+                        }
+                    }
+                    else {
+                        const dice: number = randomInterval(0, doodleBugReproductionLikelihood);
+                        if (dice === 0) {
+                            letsMakeBabies = true;
+                        }
+                    }
 
+                    if (letsMakeBabies) {
+                        const freeCells: [number, number][] = this.getFreeCells(x, y);
+                        const babyCell: [number, number] = freeCells[randomInterval(0, freeCells.length - 1)];
+                        if (beingA.getSpecies() === "ANT") {
+                            const newAnt: Ant = new Ant(babyCell, 0, "Jamnicek");
+                            this.placeBeing(newAnt.getPosition(), newAnt);
+                        }
+                        else {
+                            const newDoodleBug: DoodleBug = new DoodleBug(babyCell, 0, "Jamnicek");
+                            this.placeBeing(newDoodleBug.getPosition(), newDoodleBug);
+                        }
+                    }
                 }
-
-                /*
-                XO
-                XX
-                */
-                else if(isRight) {
-
-                }
-
-                /*
-                XOX
-                XXX
-                */
-                else {
-
-                }
-            }
-            else if(isDown) {
-
-                /*
-                XX
-                0X
-                */
-                if(isLeft) {
-
-                }
-
-                /*
-                XX
-                XO
-                */
-                else if (isRight) {
-
-                }
-
-                /*
-                XXX
-                XOX
-                */
-                else {
-                    neighbors.push(this.cell[x - 1][y - 1]);
-                    neighbors.push(this.cell[x - 1][y]);
-                    neighbors.push(this.cell[x][y - 1]);
-                    neighbors.push(this.cell[x + 1][y - 1]);
-                    neighbors.push(this.cell[x + 1][y]);
-
-                }
-            }
-
-            /*
-            XX
-            OX
-            XX
-            */
-            else if (!isUp && ! isDown && isLeft) {
-                neighbors.push(this.cell[x][y - 1]);
-                neighbors.push(this.cell[x][y + 1]);
-                neighbors.push(this.cell[x + 1][y - 1]);
-                neighbors.push(this.cell[x + 1][y]);
-                neighbors.push(this.cell[x + 1][y + 1]);
-            }
-
-            /*
-            XX
-            XO
-            XX
-            */
-            else if (!isUp && ! isDown && isRight) {
-                neighbors.push(this.cell[x - 1][y - 1]);
-                neighbors.push(this.cell[x - 1][y]);
-                neighbors.push(this.cell[x - 1][y + 1]);
-                neighbors.push(this.cell[x][y - 1]);
-                neighbors.push(this.cell[x][y + 1]);
-            
-            }
-
-            /*
-            XXX
-            XOX
-            XXX
-            */
-            else {
-                neighbors.push(this.cell[x - 1][y - 1]);
-                neighbors.push(this.cell[x - 1][y]);
-                neighbors.push(this.cell[x - 1][y + 1]);
-                neighbors.push(this.cell[x][y - 1]);
-                neighbors.push(this.cell[x][y + 1]);
-                neighbors.push(this.cell[x + 1][y - 1]);
-                neighbors.push(this.cell[x + 1][y]);
-                neighbors.push(this.cell[x + 1][y + 1]);
             }
         }
-
     }
 
     //Everybody growing older.
@@ -260,18 +203,28 @@ class World {
     //Function to render the world.
     render(): void {
         console.clear();
+        //Iterate over the cells array.
         for (let h: number = 0; h < this.dimensions[1]; h++) {
             let line: string = "";
             for (let w: number = 0; w < this.dimensions[0]; w++) {
+                //Check the current cell.
                 const cell = this.cell[w][h];
+                let age: number = 0;
+                if(cell instanceof Being) {
+                    age = cell.getAge();
+                }
                 if (!cell) {
                     line += " ";
                 }
                 else if (cell instanceof Ant) {
-                    line += "\x1b[36mX\x1b[0m";
+                    const ageIndex: number = Math.floor((age / 20) * (antChars.length - 1));
+                    const char: string = antChars[ageIndex];
+                    line += colorCharacter(char, 255 - 9 * age, 255 - 9 * age, 0);
                 }
                 else if (cell instanceof DoodleBug) {
-                    line += "\x1b[31m#\x1b[0m";
+                    const ageIndex: number = Math.floor((age / 30) * (doodleBugChar.length - 1));
+                    const char: string = doodleBugChar[ageIndex];
+                    line += colorCharacter(char, 0, 255 - 7 * age, 255 - 7 * age);
                 }
             }
             console.log(line);
@@ -281,6 +234,10 @@ class World {
 
 function randomInterval(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+function colorCharacter(char: string, red: number, green: number, blue: number): string {
+    return `\x1b[38;2;${red};${green};${blue}m${char}\x1b[0m`;
 }
 
 const aWorld: World = new World([200, 50]);
@@ -302,7 +259,10 @@ const interval = setInterval(() => {
     }
     aWorld.moveEverybody();
     aWorld.growingOlder();
+    aWorld.makingBabies();
     aWorld.render();
-    console.log(i);
+    aWorld.readPopulation();
     i++;
 }, 100);
+
+

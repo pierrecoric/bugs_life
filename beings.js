@@ -18,24 +18,38 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DoodleBug = exports.Ant = exports.Being = void 0;
 //Base class: Being.
 var Being = /** @class */ (function () {
-    function Being(position, age, lifeExpectancy, life, name) {
+    function Being(species, position, age, lifeExpectancy, life, name) {
+        if (species === void 0) { species = ""; }
         if (position === void 0) { position = [0, 0]; }
         if (age === void 0) { age = 0; }
         if (lifeExpectancy === void 0) { lifeExpectancy = 0; }
         if (life === void 0) { life = 0; }
         if (name === void 0) { name = "Boris"; }
+        this.species = species;
         this.position = position;
         this.age = age;
         this.lifeExpectancy = lifeExpectancy;
         this.life = life;
         this.name = name;
     }
-    Being.prototype.setPosition = function (x, y) {
-        this.position[0] = x;
-        this.position[1] = y;
+    Being.prototype.setPosition = function (coordinates) {
+        this.position[0] = coordinates[0];
+        this.position[1] = coordinates[1];
     };
     Being.prototype.getPosition = function () {
         return ([this.position[0], this.position[1]]);
+    };
+    Being.prototype.getSpecies = function () {
+        return this.species;
+    };
+    Being.prototype.getAge = function () {
+        return this.age;
+    };
+    Being.prototype.getLife = function () {
+        return this.life;
+    };
+    Being.prototype.getLifeExpectancy = function () {
+        return this.lifeExpectancy;
     };
     Being.prototype.die = function () {
         return false;
@@ -59,33 +73,11 @@ var Being = /** @class */ (function () {
         }
     };
     //[left, right, up, down]
-    Being.prototype.move = function (availableDirections) {
-        if (!availableDirections[0] && !availableDirections[1] && !availableDirections[2] && !availableDirections[3]) {
+    Being.prototype.move = function (freeCells) {
+        if (freeCells.length === 0) {
             return;
         }
-        var pickedDirection = false;
-        var direction = randomInterval(0, 3);
-        while (!pickedDirection) {
-            direction = randomInterval(0, 3);
-            if (availableDirections[direction]) {
-                pickedDirection = true;
-            }
-        }
-        switch (direction) {
-            case 0:
-                this.position[0]--;
-                if (this.position[0] < 0) { }
-                break;
-            case 1:
-                this.position[0]++;
-                break;
-            case 2:
-                this.position[1]--;
-                break;
-            case 3:
-                this.position[1]++;
-                break;
-        }
+        this.setPosition(freeCells[randomInterval(0, freeCells.length - 1)]);
     };
     Being.prototype.sayHello = function () {
         console.log("This is ".concat(this.name, " who is ").concat(this.age, " generations old in position ").concat(this.position[0], ", ").concat(this.position[1], "."));
@@ -97,7 +89,8 @@ exports.Being = Being;
 var Ant = /** @class */ (function (_super) {
     __extends(Ant, _super);
     function Ant(position, age, name) {
-        return _super.call(this, position !== null && position !== void 0 ? position : [0, 0], age !== null && age !== void 0 ? age : 0, Ant.DEFAULT_LIFE_EXPECTANCY, Ant.DEFAULT_LIFE, name !== null && name !== void 0 ? name : "Charlie") || this;
+        //How to add the string species?
+        return _super.call(this, "ANT", position !== null && position !== void 0 ? position : [0, 0], age !== null && age !== void 0 ? age : 0, Ant.DEFAULT_LIFE_EXPECTANCY, Ant.DEFAULT_LIFE, name !== null && name !== void 0 ? name : "Charlie") || this;
     }
     Ant.DEFAULT_LIFE = 10;
     Ant.DEFAULT_LIFE_EXPECTANCY = 20;
@@ -109,7 +102,7 @@ var DoodleBug = /** @class */ (function (_super) {
     __extends(DoodleBug, _super);
     function DoodleBug(position, age, name, starve) {
         if (starve === void 0) { starve = 0; }
-        var _this = _super.call(this, position !== null && position !== void 0 ? position : [0, 0], age !== null && age !== void 0 ? age : 0, DoodleBug.DEFAULT_LIFE_EXPECTANCY, DoodleBug.DEFAULT_LIFE, name !== null && name !== void 0 ? name : "Magda") || this;
+        var _this = _super.call(this, "DOODLEBUG", position !== null && position !== void 0 ? position : [0, 0], age !== null && age !== void 0 ? age : 0, DoodleBug.DEFAULT_LIFE_EXPECTANCY, DoodleBug.DEFAULT_LIFE, name !== null && name !== void 0 ? name : "Magda") || this;
         _this.starve = starve;
         return _this;
     }
