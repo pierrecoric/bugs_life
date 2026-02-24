@@ -16,44 +16,46 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DoodleBug = exports.Ant = exports.Being = void 0;
+var utils_1 = require("./utils");
+var Constants = require("./constants");
 //Base class: Being.
 var Being = /** @class */ (function () {
-    function Being(species, position, age, lifeExpectancy, life, name) {
+    //The constructor
+    function Being(species, position, age, lifeExpectancy, life) {
         if (species === void 0) { species = ""; }
         if (position === void 0) { position = [0, 0]; }
         if (age === void 0) { age = 0; }
         if (lifeExpectancy === void 0) { lifeExpectancy = 0; }
         if (life === void 0) { life = 0; }
-        if (name === void 0) { name = "Boris"; }
         this.species = species;
         this.position = position;
         this.age = age;
         this.lifeExpectancy = lifeExpectancy;
         this.life = life;
-        this.name = name;
     }
+    //Modifiers:
     Being.prototype.setPosition = function (coordinates) {
         this.position[0] = coordinates[0];
         this.position[1] = coordinates[1];
     };
-    Being.prototype.getPosition = function () {
-        return ([this.position[0], this.position[1]]);
-    };
+    //Accessors
     Being.prototype.getSpecies = function () {
         return this.species;
+    };
+    Being.prototype.getPosition = function () {
+        return ([this.position[0], this.position[1]]);
     };
     Being.prototype.getAge = function () {
         return this.age;
     };
-    Being.prototype.getLife = function () {
-        return this.life;
-    };
     Being.prototype.getLifeExpectancy = function () {
         return this.lifeExpectancy;
     };
+    //Return false when the being dies.
     Being.prototype.die = function () {
         return false;
     };
+    //Increments the age and return return false if the being has died.
     Being.prototype.growOlder = function () {
         this.age++;
         if (this.age > this.lifeExpectancy) {
@@ -63,6 +65,7 @@ var Being = /** @class */ (function () {
             return true;
         }
     };
+    //Takes hit and return false if the being has died.
     Being.prototype.getHit = function (hit) {
         this.life -= hit;
         if (this.life <= 0) {
@@ -72,15 +75,16 @@ var Being = /** @class */ (function () {
             return true;
         }
     };
-    //[left, right, up, down]
+    //Update the position to a random free cell around the being.
     Being.prototype.move = function (freeCells) {
         if (freeCells.length === 0) {
             return;
         }
-        this.setPosition(freeCells[randomInterval(0, freeCells.length - 1)]);
+        this.setPosition(freeCells[(0, utils_1.randomInterval)(0, freeCells.length - 1)]);
     };
+    //Tells you things about the being.
     Being.prototype.sayHello = function () {
-        console.log("This is ".concat(this.name, " who is ").concat(this.age, " generations old in position ").concat(this.position[0], ", ").concat(this.position[1], "."));
+        console.log("".concat(this.age, " generations old in position ").concat(this.position[0], ", ").concat(this.position[1], "."));
     };
     return Being;
 }());
@@ -88,21 +92,20 @@ exports.Being = Being;
 //Ant class.
 var Ant = /** @class */ (function (_super) {
     __extends(Ant, _super);
-    function Ant(position, age, name) {
-        //How to add the string species?
-        return _super.call(this, "ANT", position !== null && position !== void 0 ? position : [0, 0], age !== null && age !== void 0 ? age : 0, Ant.DEFAULT_LIFE_EXPECTANCY, Ant.DEFAULT_LIFE, name !== null && name !== void 0 ? name : "Charlie") || this;
+    function Ant(position, age) {
+        return _super.call(this, "ANT", position !== null && position !== void 0 ? position : [0, 0], age !== null && age !== void 0 ? age : 0, Ant.DEFAULT_LIFE_EXPECTANCY, Ant.DEFAULT_LIFE) || this;
     }
-    Ant.DEFAULT_LIFE = 10;
-    Ant.DEFAULT_LIFE_EXPECTANCY = 20;
+    Ant.DEFAULT_LIFE = Constants.antLife;
+    Ant.DEFAULT_LIFE_EXPECTANCY = Constants.antLifeExpectancy;
     return Ant;
 }(Being));
 exports.Ant = Ant;
 //Doodlebug Class.
 var DoodleBug = /** @class */ (function (_super) {
     __extends(DoodleBug, _super);
-    function DoodleBug(position, age, name, starve) {
+    function DoodleBug(position, age, starve) {
         if (starve === void 0) { starve = 0; }
-        var _this = _super.call(this, "DOODLEBUG", position !== null && position !== void 0 ? position : [0, 0], age !== null && age !== void 0 ? age : 0, DoodleBug.DEFAULT_LIFE_EXPECTANCY, DoodleBug.DEFAULT_LIFE, name !== null && name !== void 0 ? name : "Magda") || this;
+        var _this = _super.call(this, "DOODLEBUG", position !== null && position !== void 0 ? position : [0, 0], age !== null && age !== void 0 ? age : 0, DoodleBug.DEFAULT_LIFE_EXPECTANCY, DoodleBug.DEFAULT_LIFE) || this;
         _this.starve = starve;
         return _this;
     }
@@ -110,18 +113,15 @@ var DoodleBug = /** @class */ (function (_super) {
         if (!hasEaten) {
             this.starve++;
         }
-        if (this.starve === 5) {
+        if (this.starve === Constants.doodleBugStarvation) {
             return this.die();
         }
         else {
             return true;
         }
     };
-    DoodleBug.DEFAULT_LIFE = 20;
-    DoodleBug.DEFAULT_LIFE_EXPECTANCY = 30;
+    DoodleBug.DEFAULT_LIFE = Constants.doodleBugLife;
+    DoodleBug.DEFAULT_LIFE_EXPECTANCY = Constants.doodleBugLifeExpectancy;
     return DoodleBug;
 }(Being));
 exports.DoodleBug = DoodleBug;
-function randomInterval(min, max) {
-    return Math.floor(Math.random() * (max - min + 1) + min);
-}

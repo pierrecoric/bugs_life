@@ -1,11 +1,9 @@
 import { Being, DoodleBug, Ant } from "./beings";
+import { randomInterval, colorCharacter } from "./utils";
+import * as Constants from "./constants";
 
-const initialAmountAnts: number = 200;
-const initialAmountBugs: number = 80;
-const antReproductionLikelihood: number = 10 - 9;
-const doodleBugReproductionLikelihood: number = 10 - 8;
 
-const antChars: string[] = [".", "o", "O", "0", "8"];
+const antChars: string[] = [".", "o", "O", "0", "*", "8"];
 const doodleBugChar: string[] = ["-", "x", "X", "F", "E", "#"];
 
 //World Class.
@@ -41,18 +39,18 @@ class World {
 
     //Function to populate the world.
     initialize(): void {
-        for (let i: number = 0; i < initialAmountAnts; i++) {
+        for (let i: number = 0; i < Constants.initialAmountAnts; i++) {
             const posx: number = randomInterval(0, this.dimensions[0] - 1);
             const posy: number = randomInterval(0, this.dimensions[1] - 1);
-            const newAnt: Ant = new Ant([posx, posy], 0, "Bogusława");
+            const newAnt: Ant = new Ant([posx, posy]);
             if (!this.cell[posx][posy]) {
                 this.placeBeing([posx, posy], newAnt);
             } else { i--; }
         }
-        for (let i: number = 0; i < initialAmountBugs; i++) {
+        for (let i: number = 0; i < Constants.initialAmountDoodleBugs; i++) {
             const posx: number = randomInterval(0, this.dimensions[0] - 1);
             const posy: number = randomInterval(0, this.dimensions[1] - 1);
-            const newDoodleBug: DoodleBug = new DoodleBug([posx, posy], 0, "Zbigniew");
+            const newDoodleBug: DoodleBug = new DoodleBug([posx, posy]);
             if (!this.cell[posx][posy]) {
                 this.placeBeing([posx, posy], newDoodleBug);
             } else { i--; }
@@ -127,13 +125,9 @@ class World {
         }
     }
 
-    //Doodlebugs eat ants.
+    //Doodlebugs eat ants or get hungry.
 
-    //Everybody gets hungry.
-
-    //Everybody is making babies. Rule: if exactly two of the same beings are next to eachOther,
-    //they have one chance out of three to make a baby. The baby appears in one of the free spots around them.
-
+    //Beings are making babies.
     makingBabies(): void {
         //Iterate over the population.
         for (let i: number = 0; i < this.population.length; i++) {
@@ -151,21 +145,21 @@ class World {
                 //If both beings are of the same species and old enough to have babies and not too old to have babies.
                 if (
                     beingA.getSpecies() === beingB.getSpecies() &&
-                    beingA.getAge() > beingA.getLifeExpectancy() / 8 &&
-                    beingB.getAge() > beingB.getLifeExpectancy() / 8 &&
-                    beingA.getAge() < beingA.getLifeExpectancy() - beingA.getLifeExpectancy() / 5 &&
-                    beingB.getAge() < beingB.getLifeExpectancy() - beingB.getLifeExpectancy() / 5
+                    beingA.getAge() > beingA.getLifeExpectancy() / Constants.maturityDivider &&
+                    beingB.getAge() > beingB.getLifeExpectancy() / Constants.maturityDivider &&
+                    beingA.getAge() < beingA.getLifeExpectancy() - beingA.getLifeExpectancy() / Constants.oldAgeDivider &&
+                    beingB.getAge() < beingB.getLifeExpectancy() - beingB.getLifeExpectancy() / Constants.oldAgeDivider
                 ) {
                     //Define wheter babies are being made
                     let letsMakeBabies: boolean = false;
                     if (beingA.getSpecies() === "ANT") {
-                        const dice: number = randomInterval(0, antReproductionLikelihood);
+                        const dice: number = randomInterval(0, Constants.antReproductionLikelihood);
                         if (dice === 0) {
                             letsMakeBabies = true;
                         }
                     }
                     else {
-                        const dice: number = randomInterval(0, doodleBugReproductionLikelihood);
+                        const dice: number = randomInterval(0, Constants.doodleBugReproductionLikelihood);
                         if (dice === 0) {
                             letsMakeBabies = true;
                         }
@@ -175,11 +169,11 @@ class World {
                         const freeCells: [number, number][] = this.getFreeCells(x, y);
                         const babyCell: [number, number] = freeCells[randomInterval(0, freeCells.length - 1)];
                         if (beingA.getSpecies() === "ANT") {
-                            const newAnt: Ant = new Ant(babyCell, 0, "Jamnicek");
+                            const newAnt: Ant = new Ant(babyCell);
                             this.placeBeing(newAnt.getPosition(), newAnt);
                         }
                         else {
-                            const newDoodleBug: DoodleBug = new DoodleBug(babyCell, 0, "Jamnicek");
+                            const newDoodleBug: DoodleBug = new DoodleBug(babyCell);
                             this.placeBeing(newDoodleBug.getPosition(), newDoodleBug);
                         }
                     }
@@ -210,9 +204,10 @@ class World {
                 //Check the current cell.
                 const cell = this.cell[w][h];
                 let age: number = 0;
-                if(cell instanceof Being) {
+                if (cell instanceof Being) {
                     age = cell.getAge();
                 }
+                //If cell is undefined.
                 if (!cell) {
                     line += " ";
                 }
@@ -232,26 +227,12 @@ class World {
     }
 }
 
-function randomInterval(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min + 1) + min);
-}
-
-function colorCharacter(char: string, red: number, green: number, blue: number): string {
-    return `\x1b[38;2;${red};${green};${blue}m${char}\x1b[0m`;
-}
-
-const aWorld: World = new World([200, 50]);
-
-for (let i: number = 0; i < 100; i++) {
-    aWorld.moveEverybody();
-    aWorld.render();
-    console.log(i);
-}
-
-let i: number = 0;
-const maxIterations: number = 10000;
+//Initialize a world.
+const aWorld: World = new World([200, 55]);
 
 //Time based animation.
+let i: number = 0;
+const maxIterations: number = 10000;
 const interval = setInterval(() => {
     if (i >= maxIterations) {
         clearInterval(interval);
@@ -264,5 +245,3 @@ const interval = setInterval(() => {
     aWorld.readPopulation();
     i++;
 }, 100);
-
-

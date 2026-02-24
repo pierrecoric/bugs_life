@@ -1,11 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var beings_1 = require("./beings");
-var initialAmountAnts = 200;
-var initialAmountBugs = 80;
-var antReproductionLikelihood = 10 - 9;
-var doodleBugReproductionLikelihood = 10 - 8;
-var antChars = [".", "o", "O", "0", "8"];
+var utils_1 = require("./utils");
+var Constants = require("./constants");
+var antChars = [".", "𓀤", "O", "0", "*", "8"];
 var doodleBugChar = ["-", "x", "X", "F", "E", "#"];
 //World Class.
 var World = /** @class */ (function () {
@@ -34,10 +32,10 @@ var World = /** @class */ (function () {
     };
     //Function to populate the world.
     World.prototype.initialize = function () {
-        for (var i_1 = 0; i_1 < initialAmountAnts; i_1++) {
-            var posx = randomInterval(0, this.dimensions[0] - 1);
-            var posy = randomInterval(0, this.dimensions[1] - 1);
-            var newAnt = new beings_1.Ant([posx, posy], 0, "Bogusława");
+        for (var i_1 = 0; i_1 < Constants.initialAmountAnts; i_1++) {
+            var posx = (0, utils_1.randomInterval)(0, this.dimensions[0] - 1);
+            var posy = (0, utils_1.randomInterval)(0, this.dimensions[1] - 1);
+            var newAnt = new beings_1.Ant([posx, posy]);
             if (!this.cell[posx][posy]) {
                 this.placeBeing([posx, posy], newAnt);
             }
@@ -45,10 +43,10 @@ var World = /** @class */ (function () {
                 i_1--;
             }
         }
-        for (var i_2 = 0; i_2 < initialAmountBugs; i_2++) {
-            var posx = randomInterval(0, this.dimensions[0] - 1);
-            var posy = randomInterval(0, this.dimensions[1] - 1);
-            var newDoodleBug = new beings_1.DoodleBug([posx, posy], 0, "Zbigniew");
+        for (var i_2 = 0; i_2 < Constants.initialAmountDoodleBugs; i_2++) {
+            var posx = (0, utils_1.randomInterval)(0, this.dimensions[0] - 1);
+            var posy = (0, utils_1.randomInterval)(0, this.dimensions[1] - 1);
+            var newDoodleBug = new beings_1.DoodleBug([posx, posy]);
             if (!this.cell[posx][posy]) {
                 this.placeBeing([posx, posy], newDoodleBug);
             }
@@ -118,10 +116,8 @@ var World = /** @class */ (function () {
             }
         }
     };
-    //Doodlebugs eat ants.
-    //Everybody gets hungry.
-    //Everybody is making babies. Rule: if exactly two of the same beings are next to eachOther,
-    //they have one chance out of three to make a baby. The baby appears in one of the free spots around them.
+    //Doodlebugs eat ants or get hungry.
+    //Beings are making babies.
     World.prototype.makingBabies = function () {
         //Iterate over the population.
         for (var i_4 = 0; i_4 < this.population.length; i_4++) {
@@ -135,33 +131,33 @@ var World = /** @class */ (function () {
                 var beingB = neighbors[0];
                 //If both beings are of the same species and old enough to have babies and not too old to have babies.
                 if (beingA.getSpecies() === beingB.getSpecies() &&
-                    beingA.getAge() > beingA.getLifeExpectancy() / 8 &&
-                    beingB.getAge() > beingB.getLifeExpectancy() / 8 &&
-                    beingA.getAge() < beingA.getLifeExpectancy() - beingA.getLifeExpectancy() / 5 &&
-                    beingB.getAge() < beingB.getLifeExpectancy() - beingB.getLifeExpectancy() / 5) {
+                    beingA.getAge() > beingA.getLifeExpectancy() / Constants.maturityDivider &&
+                    beingB.getAge() > beingB.getLifeExpectancy() / Constants.maturityDivider &&
+                    beingA.getAge() < beingA.getLifeExpectancy() - beingA.getLifeExpectancy() / Constants.oldAgeDivider &&
+                    beingB.getAge() < beingB.getLifeExpectancy() - beingB.getLifeExpectancy() / Constants.oldAgeDivider) {
                     //Define wheter babies are being made
                     var letsMakeBabies = false;
                     if (beingA.getSpecies() === "ANT") {
-                        var dice = randomInterval(0, antReproductionLikelihood);
+                        var dice = (0, utils_1.randomInterval)(0, Constants.antReproductionLikelihood);
                         if (dice === 0) {
                             letsMakeBabies = true;
                         }
                     }
                     else {
-                        var dice = randomInterval(0, doodleBugReproductionLikelihood);
+                        var dice = (0, utils_1.randomInterval)(0, Constants.doodleBugReproductionLikelihood);
                         if (dice === 0) {
                             letsMakeBabies = true;
                         }
                     }
                     if (letsMakeBabies) {
                         var freeCells = this.getFreeCells(x, y);
-                        var babyCell = freeCells[randomInterval(0, freeCells.length - 1)];
+                        var babyCell = freeCells[(0, utils_1.randomInterval)(0, freeCells.length - 1)];
                         if (beingA.getSpecies() === "ANT") {
-                            var newAnt = new beings_1.Ant(babyCell, 0, "Jamnicek");
+                            var newAnt = new beings_1.Ant(babyCell);
                             this.placeBeing(newAnt.getPosition(), newAnt);
                         }
                         else {
-                            var newDoodleBug = new beings_1.DoodleBug(babyCell, 0, "Jamnicek");
+                            var newDoodleBug = new beings_1.DoodleBug(babyCell);
                             this.placeBeing(newDoodleBug.getPosition(), newDoodleBug);
                         }
                     }
@@ -193,18 +189,19 @@ var World = /** @class */ (function () {
                 if (cell instanceof beings_1.Being) {
                     age = cell.getAge();
                 }
+                //If cell is undefined.
                 if (!cell) {
                     line += " ";
                 }
                 else if (cell instanceof beings_1.Ant) {
                     var ageIndex = Math.floor((age / 20) * (antChars.length - 1));
                     var char = antChars[ageIndex];
-                    line += colorCharacter(char, 255 - 9 * age, 255 - 9 * age, 0);
+                    line += (0, utils_1.colorCharacter)(char, 255 - 9 * age, 255 - 9 * age, 0);
                 }
                 else if (cell instanceof beings_1.DoodleBug) {
                     var ageIndex = Math.floor((age / 30) * (doodleBugChar.length - 1));
                     var char = doodleBugChar[ageIndex];
-                    line += colorCharacter(char, 0, 255 - 7 * age, 255 - 7 * age);
+                    line += (0, utils_1.colorCharacter)(char, 0, 255 - 7 * age, 255 - 7 * age);
                 }
             }
             console.log(line);
@@ -212,21 +209,11 @@ var World = /** @class */ (function () {
     };
     return World;
 }());
-function randomInterval(min, max) {
-    return Math.floor(Math.random() * (max - min + 1) + min);
-}
-function colorCharacter(char, red, green, blue) {
-    return "\u001B[38;2;".concat(red, ";").concat(green, ";").concat(blue, "m").concat(char, "\u001B[0m");
-}
-var aWorld = new World([200, 50]);
-for (var i_6 = 0; i_6 < 100; i_6++) {
-    aWorld.moveEverybody();
-    aWorld.render();
-    console.log(i_6);
-}
+//Initialize a world.
+var aWorld = new World([200, 55]);
+//Time based animation.
 var i = 0;
 var maxIterations = 10000;
-//Time based animation.
 var interval = setInterval(function () {
     if (i >= maxIterations) {
         clearInterval(interval);
